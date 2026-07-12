@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
+
+# Database (optional)
+employee.db
+
+# Ignore trained ML model (optional)
+ml/model.pkl
