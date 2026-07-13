@@ -1,3 +1,5 @@
+from models.user import User
+from werkzeug.security import generate_password_hash
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -31,6 +33,24 @@ login_manager.login_view = "login"
 with app.app_context():
     db.create_all()
 
+    # Create default admin if database is empty
+    admin = User.query.filter_by(email="jahnavi@gmail.com").first()
+
+    if not admin:
+        admin = User(
+            employee_id="EMP001",
+            full_name="Talluru Jahnavi",
+            email="jahnavi@gmail.com",
+            password=bcrypt.generate_password_hash("admin123").decode("utf-8"),
+            role="Admin"
+        )
+
+        db.session.add(admin)
+        db.session.commit()
+
+        print("✅ Default admin created!")
+
+    # Display users in database
     users = User.query.all()
     print("Users in database:", users)
 
