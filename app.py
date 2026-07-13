@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from utils.device_detector import get_device_details
 from datetime import datetime, timedelta
 from config import Config
@@ -22,10 +23,27 @@ app.config.from_object(Config)
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
 # Create database tables
 with app.app_context():
     db.create_all()
 
+    users = User.query.all()
+    print("Users in database:", users)
+
+    for u in users:
+        print(u.id, u.employee_id, u.email, u.role)
+
+
+# ==========================
+# FLASK LOGIN
+# ==========================
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 # ==========================
 # LOGIN
 # ==========================
@@ -37,9 +55,15 @@ def login():
 
         email = request.form.get("email")
         password = request.form.get("password")
+        print("Email entered:", email)
+        print("Searching for:", repr(email))
 
-        user = User.query.filter_by(email=email).first()
+        users = User.query.all()
+        print("All emails:", [u.email for u in users])
+        user = User.query.filter_by(email=email.strip()).first()
 
+        print("Found:", user)
+        print("User found:", user)
         # Detect browser, OS and device
         user_agent = request.headers.get("User-Agent")
         browser, operating_system, device = get_device_details(user_agent)
@@ -123,10 +147,15 @@ def login():
                 db.session.add(login_log)
                 db.session.commit()
 
-                return render_template(
-                    "dashboard.html",
-                    user=user
-                )
+                # Login the user
+                login_user(user)
+
+                # Redirect based on role
+                if user.role == "Admin":
+                    return redirect(url_for("admin"))
+                else:
+                    return redirect(url_for("dashboard"))
+                
 
             # -----------------------------
             # WRONG PASSWORD
@@ -240,24 +269,29 @@ def register():
 # EMPLOYEE DASHBOARD
 # ==========================
 @app.route("/dashboard")
+@login_required
 def dashboard():
-
-    user = User.query.first()   # temporary
 
     return render_template(
         "dashboard.html",
-        user=user
+        user=current_user
     )
-
 
 # ==========================
 # LOGIN HISTORY
 # ==========================
 
 @app.route("/history")
+@login_required
 def history():
 
-    logs = LoginLog.query.order_by(LoginLog.login_time.desc()).all()
+    if current_user.role != "Admin":
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
+
+    logs = LoginLog.query.order_by(
+        LoginLog.login_time.desc()
+    ).all()
 
     return render_template(
         "login_history.html",
@@ -268,7 +302,12 @@ def history():
 # ==========================
 
 @app.route("/failed-logins")
+@login_required
 def failed_logins():
+
+    if current_user.role != "Admin":
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
 
     logs = FailedLogin.query.order_by(
         FailedLogin.login_time.desc()
@@ -281,23 +320,29 @@ def failed_logins():
 # ==========================
 # ADMIN DASHBOARD
 # ==========================
-
 @app.route("/admin")
+@login_required
 def admin():
 
+    if current_user.role != "Admin":
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
+
+    # User Statistics
     total_users = User.query.count()
+    total_employees = User.query.filter_by(role="Employee").count()
+    total_admins = User.query.filter_by(role="Admin").count()
 
+    employees = User.query.order_by(User.id.desc()).all()
+
+    # Login Statistics
     total_logins = LoginLog.query.count()
-
     success = LoginLog.query.filter_by(status="Success").count()
-
     failed = FailedLogin.query.count()
 
     # ML Risk Statistics
     low = LoginLog.query.filter_by(risk_level="Low").count()
-
     medium = LoginLog.query.filter_by(risk_level="Medium").count()
-
     high = LoginLog.query.filter_by(risk_level="High").count()
 
     logs = LoginLog.query.order_by(
@@ -306,23 +351,90 @@ def admin():
 
     return render_template(
         "admin_dashboard.html",
+
         total_users=total_users,
+        total_employees=total_employees,
+        total_admins=total_admins,
+
         total_logins=total_logins,
         success=success,
         failed=failed,
+
         low=low,
         medium=medium,
         high=high,
-        logs=logs
+
+        logs=logs,
+        employees=employees
+    )
+    # ==========================
+    # USER STATISTICS
+    # ==========================
+    total_users = User.query.count()
+
+    total_employees = User.query.filter_by(role="Employee").count()
+
+    total_admins = User.query.filter_by(role="Admin").count()
+
+    # Get all registered employees
+    employees = User.query.order_by(User.id.desc()).all()
+
+    # ==========================
+    # LOGIN STATISTICS
+    # ==========================
+    total_logins = LoginLog.query.count()
+
+    success = LoginLog.query.filter_by(status="Success").count()
+
+    failed = FailedLogin.query.count()
+
+    # ==========================
+    # ML RISK STATISTICS
+    # ==========================
+    low = LoginLog.query.filter_by(risk_level="Low").count()
+
+    medium = LoginLog.query.filter_by(risk_level="Medium").count()
+
+    high = LoginLog.query.filter_by(risk_level="High").count()
+
+    # ==========================
+    # RECENT LOGIN LOGS
+    # ==========================
+    logs = LoginLog.query.order_by(
+        LoginLog.login_time.desc()
+    ).limit(100).all()
+
+    return render_template(
+        "admin_dashboard.html",
+
+        total_users=total_users,
+        total_employees=total_employees,
+        total_admins=total_admins,
+
+        total_logins=total_logins,
+        success=success,
+        failed=failed,
+
+        low=low,
+        medium=medium,
+        high=high,
+
+        logs=logs,
+
+        employees=employees
     )
 
 
 # ==========================
 # VIEW EMPLOYEES
 # ==========================
-
 @app.route("/employees")
+@login_required
 def employees():
+
+    if current_user.role != "Admin":
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
 
     users = User.query.order_by(User.id).all()
 
@@ -330,12 +442,19 @@ def employees():
         "employees.html",
         users=users
     )
+
+    
 # ==========================
 # EDIT EMPLOYEE
 # ==========================
-
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
+@login_required
 def edit_employee(id):
+
+    if current_user.role != "Admin":
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
+
 
     user = User.query.get_or_404(id)
 
@@ -370,7 +489,10 @@ def delete_employee(id):
 # ==========================
 
 @app.route("/logout")
+@login_required
 def logout():
+    logout_user()
+    flash("Logged out successfully.", "success")
     return redirect(url_for("login"))
 
 

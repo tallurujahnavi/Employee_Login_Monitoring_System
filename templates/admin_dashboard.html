@@ -1,40 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f4f6f9;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            transition: .3s;
+        }
+
+        h2,
+        h3,
+        h4 {
+            font-weight: bold;
+        }
+
+        .table th {
+            text-align: center;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+    </style>
+
 </head>
 
-<body class="bg-light">
+<body>
+<body>
 
-<div class="container mt-5">
+<div class="container mt-4">
 
-    <h2 class="text-center mb-2">
-        Employee Login Monitoring System
-    </h2>
+    <div class="text-center">
 
-    <h4 class="text-center text-primary mb-4">
-        Admin Dashboard
-    </h4>
+        <h2>Employee Login Monitoring System</h2>
+
+        <h4 class="text-primary">
+            Welcome {{ current_user.full_name }}
+        </h4>
+
+        <p class="text-muted">
+            Machine Learning Based Login Monitoring Dashboard
+        </p>
+
+    </div>
+
+    <hr>
 
     <!-- Dashboard Cards -->
-    <div class="row">
+
+    <div class="row g-4">
 
         <div class="col-md-3">
-            <div class="card bg-primary text-white shadow text-center">
-                <div class="card-body">
-                    <h5>Total Employees</h5>
-                    <h2>{{ total_users }}</h2>
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body text-center">
+                    <h5>Registered Employees</h5>
+                    <h2>{{ total_employees }}</h2>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-success text-white shadow text-center">
-                <div class="card-body">
+            <div class="card bg-dark text-white shadow">
+                <div class="card-body text-center">
+                    <h5>Total Admins</h5>
+                    <h2>{{ total_admins }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body text-center">
                     <h5>Total Logins</h5>
                     <h2>{{ total_logins }}</h2>
                 </div>
@@ -42,19 +93,28 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-info text-white shadow text-center">
-                <div class="card-body">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body text-center">
                     <h5>Successful Logins</h5>
                     <h2>{{ success }}</h2>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card bg-danger text-white shadow text-center">
-                <div class="card-body">
+        <div class="col-md-3 mt-4">
+            <div class="card bg-danger text-white shadow">
+                <div class="card-body text-center">
                     <h5>Failed Logins</h5>
                     <h2>{{ failed }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mt-4">
+            <div class="card bg-warning text-dark shadow">
+                <div class="card-body text-center">
+                    <h5>Total Users</h5>
+                    <h2>{{ total_users }}</h2>
                 </div>
             </div>
         </div>
@@ -63,18 +123,19 @@
 
     <br>
 
-    <!-- Navigation Buttons -->
-    <div class="text-center mb-4">
+    <!-- Navigation -->
 
-        <a href="/employees" class="btn btn-success">
-            👥 View Employees
+    <div class="text-center">
+
+        <a href="/employees" class="btn btn-success me-2">
+            👥 Employees
         </a>
 
-        <a href="/history" class="btn btn-primary">
+        <a href="/history" class="btn btn-primary me-2">
             📜 Login History
         </a>
 
-        <a href="/failed-logins" class="btn btn-warning">
+        <a href="/failed-logins" class="btn btn-warning me-2">
             🚨 Failed Logins
         </a>
 
@@ -84,100 +145,90 @@
 
     </div>
 
-    <!-- Login History -->
-    <h3 class="mb-3">
-        Recent Login History
-    </h3>
+    <hr>
 
-    <table class="table table-bordered table-striped table-hover">
+    <!-- Registered Employees -->
 
-        <thead class="table-dark">
-            <tr>
-                <th>Employee</th>
-                <th>Email</th>
-                <th>Login Time</th>
-                <th>Status</th>
-                <th>Risk</th>
-            </tr>
-        </thead>
+    <div class="card shadow mb-5">
 
-        <tbody>
+        <div class="card-header bg-success text-white">
 
-        {% for log in logs %}
-
-        <tr>
-
-            <td>{{ log.full_name }}</td>
-            <td>{{ log.email }}</td>
-            <td>{{ log.login_time }}</td>
-
-            <td>
-
-                {% if log.status=="Success" %}
-                    <span class="badge bg-success">Success</span>
-                {% else %}
-                    <span class="badge bg-danger">Failed</span>
-                {% endif %}
-
-            </td>
-
-            <td>
-
-                {% if log.risk_level=="Low" %}
-                    <span class="badge bg-success">Low</span>
-
-                {% elif log.risk_level=="Medium" %}
-                    <span class="badge bg-warning text-dark">Medium</span>
-
-                {% elif log.risk_level=="High" %}
-                    <span class="badge bg-danger">High</span>
-
-                {% else %}
-                    <span class="badge bg-secondary">Unknown</span>
-
-                {% endif %}
-
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-        </tbody>
-
-    </table>
-
-    <hr class="my-5">
-
-    <h3 class="text-center">
-        🤖 Machine Learning Risk Analysis
-    </h3>
-
-    <div class="row mt-4">
-
-        <div class="col-md-6">
-
-            <canvas id="riskChart"></canvas>
+            <h4 class="mb-0">
+                Registered Employees
+            </h4>
 
         </div>
 
-        <div class="col-md-6">
+        <div class="card-body">
 
-            <div class="card shadow">
+            <table class="table table-bordered table-striped table-hover">
 
-                <div class="card-header bg-dark text-white">
-                    ML Prediction Summary
-                </div>
+                <thead class="table-dark">
 
-                <div class="card-body">
+                    <tr>
 
-                    <p>🟢 Low Risk : <strong>{{ low }}</strong></p>
+                        <th>ID</th>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
 
-                    <p>🟡 Medium Risk : <strong>{{ medium }}</strong></p>
+                    </tr>
 
-                    <p>🔴 High Risk : <strong>{{ high }}</strong></p>
+                </thead>
 
-                </div>
+                <tbody>
+
+                    {% for emp in employees %}
+
+                    <tr>
+
+                        <td>{{ emp.id }}</td>
+                        <td>{{ emp.employee_id }}</td>
+                        <td>{{ emp.full_name }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>{{ emp.role }}</td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    <hr class="my-5">
+
+<h3 class="text-center">
+    🤖 Machine Learning Risk Analysis
+</h3>
+
+<div class="row mt-4">
+
+    <div class="col-md-6">
+        <canvas id="riskChart"></canvas>
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-dark text-white">
+                Machine Learning Prediction Summary
+            </div>
+
+            <div class="card-body">
+
+                <h5>Risk Distribution</h5>
+
+                <p>🟢 Low Risk : <strong>{{ low }}</strong></p>
+
+                <p>🟡 Medium Risk : <strong>{{ medium }}</strong></p>
+
+                <p>🔴 High Risk : <strong>{{ high }}</strong></p>
 
             </div>
 
@@ -185,23 +236,21 @@
 
     </div>
 
-    <!-- NEW LOGIN STATISTICS -->
+</div>
 
-    <hr class="my-5">
+<hr class="my-5">
 
-    <h3 class="text-center">
-        📊 Login Statistics
-    </h3>
+<h3 class="text-center">
+    📊 Login Statistics
+</h3>
 
-    <div class="row mt-4">
+<div class="row mt-4">
 
-        <div class="col-md-8 offset-md-2">
-
-            <canvas id="loginChart"></canvas>
-
-        </div>
-
+    <div class="col-md-8 offset-md-2">
+        <canvas id="loginChart"></canvas>
     </div>
+
+</div>
 
 </div>
 
@@ -209,70 +258,91 @@
 
 <script>
 
+const low = Number("{{ low }}");
+const medium = Number("{{ medium }}");
+const high = Number("{{ high }}");
+
+const success = Number("{{ success }}");
+const failed = Number("{{ failed }}");
+
 // Risk Chart
 
-new Chart(
-    document.getElementById("riskChart"),
-    {
-        type: "pie",
+new Chart(document.getElementById("riskChart"),{
 
-        data: {
+    type:"pie",
 
-            labels: [
-                "Low",
-                "Medium",
-                "High"
-            ],
+    data:{
 
-            datasets: [{
+        labels:["Low","Medium","High"],
 
-                data: [
-                    {{ low }},
-                    {{ medium }},
-                    {{ high }}
-                ]
+        datasets:[{
 
-            }]
+            data:[low,medium,high],
 
-        }
-    }
-);
+            backgroundColor:[
+                "#28a745",
+                "#ffc107",
+                "#dc3545"
+            ]
 
-// Login Statistics Chart
-
-new Chart(
-    document.getElementById("loginChart"),
-    {
-
-        type: "bar",
-
-        data: {
-
-            labels: [
-                "Successful Logins",
-                "Failed Logins"
-            ],
-
-            datasets: [{
-
-                label: "Login Count",
-
-                data: [
-                    {{ success }},
-                    {{ failed }}
-                ],
-
-                backgroundColor: [
-                    "#198754",
-                    "#dc3545"
-                ]
-
-            }]
-
-        }
+        }]
 
     }
-);
+
+});
+
+// Login Chart
+
+new Chart(document.getElementById("loginChart"),{
+
+    type:"bar",
+
+    data:{
+
+        labels:[
+            "Successful Logins",
+            "Failed Logins"
+        ],
+
+        datasets:[{
+
+            label:"Login Count",
+
+            data:[
+                success,
+                failed
+            ],
+
+            backgroundColor:[
+                "#198754",
+                "#dc3545"
+            ],
+
+            borderRadius:8
+
+        }]
+
+    },
+
+    options:{
+
+        responsive:true,
+
+        plugins:{
+            legend:{
+                display:false
+            }
+        },
+
+        scales:{
+            y:{
+                beginAtZero:true
+            }
+        }
+
+    }
+
+});
 
 </script>
 
