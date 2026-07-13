@@ -239,10 +239,15 @@ def register():
 # ==========================
 # EMPLOYEE DASHBOARD
 # ==========================
-
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+
+    user = User.query.first()   # temporary
+
+    return render_template(
+        "dashboard.html",
+        user=user
+    )
 
 
 # ==========================
